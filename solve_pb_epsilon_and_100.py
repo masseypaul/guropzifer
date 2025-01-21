@@ -8,10 +8,10 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 
-index_values = pd.read_csv("bricks_index_values.csv",index_col=0)
-distances = pd.read_csv("brick_rp_distances.csv",index_col=0)
+index_values = pd.read_csv("data/bricks_index_values.csv",index_col=0)
+distances = pd.read_csv("data/brick_rp_distances.csv",index_col=0)
 # pfitzer_100 = pd.read_csv("Pfitzer10-100.csv")
-distance_matrix= np.genfromtxt('dis.csv', delimiter=',', skip_header=0)  # skip_header=1 if there is a header
+distance_matrix= np.genfromtxt('data/dis.csv', delimiter=',', skip_header=0)  # skip_header=1 if there is a header
 
 #### change here the type of optimization
 OBJECTIVE = "dist" #or "disrupt" or "dist"

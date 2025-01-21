@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 
-index_values = pd.read_csv("bricks_index_values.csv",index_col=0)
-distances = pd.read_csv("brick_rp_distances.csv",index_col=0)
-distance_matrix= np.genfromtxt('dis.csv', delimiter=',', skip_header=0)
+index_values = pd.read_csv("data/bricks_index_values.csv",index_col=0)
+distances = pd.read_csv("data/brick_rp_distances.csv",index_col=0)
+distance_matrix= np.genfromtxt('data/dis.csv', delimiter=',', skip_header=0)
 
 OBJECTIVE = "dist" #or "disrupt" or "dist"
 DO_EPS = False
