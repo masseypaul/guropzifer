@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-pfitzer_100 = pd.read_csv("Pfitzer10-100.csv",delimiter=";", index_col=0)
+pfitzer_100 = pd.read_csv("data/Pfitzer10-100.csv",delimiter=";", index_col=0)
 pfitzer_100 = pfitzer_100.iloc[1:]
 pfitzer_100.index = pfitzer_100.index.astype(int)
 
