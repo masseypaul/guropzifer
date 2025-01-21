@@ -9,10 +9,10 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 
-index_values = pd.read_csv("bricks_index_values.csv",index_col=0)
-distances = pd.read_csv("brick_rp_distances.csv",index_col=0)
-all_distances = pd.read_csv("distances.csv",delimiter=";")
-distance_matrix= np.genfromtxt('dis.csv', delimiter=',', skip_header=0)  # skip_header=1 if there is a header
+index_values = pd.read_csv("data/bricks_index_values.csv",index_col=0)
+distances = pd.read_csv("data/brick_rp_distances.csv",index_col=0)
+all_distances = pd.read_csv("data/distances.csv",delimiter=";")
+distance_matrix= np.genfromtxt('data/dis.csv', delimiter=',', skip_header=0)  # skip_header=1 if there is a header
 # pfitzer_100 = pd.read_csv("Pfitzer10-100.csv")
 
 #### change here the type of optimization
