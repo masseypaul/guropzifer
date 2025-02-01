@@ -91,6 +91,7 @@ if OBJECTIVE == "disrupt":
     diff_var = m.addVars(N_BRICKS,vtype=gp.GRB.INTEGER,name="Diff")
     m.addConstrs((diff_var[i] >= center_bricks[i] - old_center_one_hot[i] for i in range(N_BRICKS)),name="diff?")
     abs_var = m.addVars(N_BRICKS,vtype=gp.GRB.INTEGER,name="abs")
+    #need to multiply by *0.5 because only count 1 change but float*gurobi makes me cry
     m.addConstrs((abs_var[i] == gp.abs_(diff_var[i]) for i in range(N_BRICKS)),name="abs?")
     disrupt_sum = gp.quicksum(abs_var[i] for i in range(N_BRICKS))
     m.setObjective(disrupt_sum, gp.GRB.MINIMIZE)
