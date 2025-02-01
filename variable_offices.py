@@ -13,10 +13,6 @@ distances = pd.read_csv("data/brick_rp_distances.csv",index_col=0)
 all_distances = pd.read_csv("data/distances.csv",delimiter=";")
 distance_matrix= np.genfromtxt('data/dis.csv', delimiter=',', skip_header=0)  # skip_header=1 if there is a header
 
-
-#### change here the type of optimization: Will be removed because 3-objectives
-OBJECTIVE = "disrupt" #or "disrupt" or "dist"
-
 representation = [
     [4,5,6,7,8,15],
     [10,11,12,13,14],
@@ -36,7 +32,6 @@ workload = index_values
 # Create Model and Variables
 m = gp.Model("Step 1")
 v = m.addMVar(shape=(N_BRICKS,NB_SR),vtype=gp.GRB.BINARY,name="V")
-
 center_bricks = m.addVars(N_BRICKS,vtype = gp.GRB.BINARY, name="C")
 
 # Create Constraints
@@ -59,68 +54,64 @@ m.addConstrs(
 )
 
 
-# TO DO: Workload constraints: to reimplement as objective
-workload_repeated = np.repeat(workload,NB_SR,axis=0).reshape(N_BRICKS,NB_SR)
-resulting_workload = m.addVars(N_BRICKS,NB_SR,vtype=gp.GRB.CONTINUOUS, name="RW")
+# MinMax workload objective
+workload_repeated = np.repeat(workload, NB_SR, axis=0).reshape(N_BRICKS, NB_SR)
+resulting_workload = m.addVars(N_BRICKS, NB_SR, vtype=gp.GRB.CONTINUOUS, name="RW")
 m.addConstrs(
-    (resulting_workload[i,j] == workload_repeated[i,j] * v[i,j] for i in range(N_BRICKS) for j in range(NB_SR)),
+    (resulting_workload[i, j] == workload_repeated[i, j] * v[i, j] for i in range(N_BRICKS) for j in range(NB_SR)),
     name="workload"
 )
-
-minWL = 0.8*new_work_balance
-maxWL = 1.2*new_work_balance
-print(minWL,maxWL)
-weighted_sums = m.addVars(NB_SR, lb=0, vtype=gp.GRB.CONTINUOUS,name="WS")
+weighted_sums = m.addVars(NB_SR, lb=0, vtype=gp.GRB.CONTINUOUS, name="WS")
 m.addConstrs(
-    (weighted_sums[j] == gp.quicksum(resulting_workload[i,j] for i in range(N_BRICKS)) for j in range(NB_SR)), 
+    (weighted_sums[j] == gp.quicksum(resulting_workload[i, j] for i in range(N_BRICKS)) for j in range(NB_SR)),
     name="V=WS"
 )
-
+max_workload = m.addVar(vtype=gp.GRB.CONTINUOUS, name="max_workload")
 m.addConstrs(
-    (weighted_sums[j] >= minWL for j in range(NB_SR)), 
-    name="MinWeightedSums"
+    (weighted_sums[j] <= max_workload for j in range(NB_SR)),
+    name="MaxWorkloadConstraint"
 )
+m.setObjective(max_workload, gp.GRB.MINIMIZE)
+
+# Disruption objective
+diff_var = m.addVars(N_BRICKS, vtype=gp.GRB.INTEGER, name="Diff")
 m.addConstrs(
-    (weighted_sums[j] <= maxWL for j in range(NB_SR)), 
-    name="MaxWeightedSums"
+    (diff_var[i] >= center_bricks[i] - old_center_one_hot[i] for i in range(N_BRICKS)),
+    name="diff_constr"
 )
+abs_var = m.addVars(N_BRICKS, vtype=gp.GRB.INTEGER, name="abs")
+m.addConstrs((abs_var[i] == gp.abs_(diff_var[i]) for i in range(N_BRICKS)), name="abs_constr")
+sum_abs_var = m.addVar(vtype=gp.GRB.INTEGER, name="sum_abs")
+m.addConstr(sum_abs_var == gp.quicksum(abs_var[i] for i in range(N_BRICKS)), name="sum_abs_constr")
+scaled_sum_abs_var = m.addVar(vtype=gp.GRB.CONTINUOUS, name="scaled_sum_abs")
+m.addConstr(scaled_sum_abs_var == 0.5 * sum_abs_var, name="scaled_sum_constr")
+m.setObjective(scaled_sum_abs_var, gp.GRB.MINIMIZE)
+
+# Total distance objective
+mult_mat = m.addVars(N_BRICKS,NB_SR,vtype=gp.GRB.CONTINUOUS)
+m.addConstrs(mult_mat[i,j] == v[i,j]*distances[i,j] for i in range(N_BRICKS) for j in range(NB_SR))
+dist_sum = gp.quicksum(mult_mat[i,j] for i in range(N_BRICKS) for j in range(NB_SR))
+m.setObjective(dist_sum, gp.GRB.MINIMIZE)
+m.optimize() 
+
+# restemp = []
+# for i in range(N_BRICKS):
+#     l=[]
+#     for j in range(NB_SR):
+#         l.append(abs_var[i,j].x)
+#     restemp.append(l)
+# print(restemp)
+
+# dist_mat = []
+# for i in range(N_BRICKS):
+#     row = []
+#     for j in range(NB_SR):
+#         row.append(mult_mat[i,j].x)
+#     dist_mat.append(row)
 
 
-#Create Objective
-if OBJECTIVE == "disrupt":
-    diff_var = m.addVars(N_BRICKS,vtype=gp.GRB.INTEGER,name="Diff")
-    m.addConstrs((diff_var[i] >= center_bricks[i] - old_center_one_hot[i] for i in range(N_BRICKS)),name="diff?")
-    abs_var = m.addVars(N_BRICKS,vtype=gp.GRB.INTEGER,name="abs")
-    #need to multiply by *0.5 because only count 1 change but float*gurobi makes me cry
-    m.addConstrs((abs_var[i] == gp.abs_(diff_var[i]) for i in range(N_BRICKS)),name="abs?")
-    disrupt_sum = gp.quicksum(abs_var[i] for i in range(N_BRICKS))
-    m.setObjective(disrupt_sum, gp.GRB.MINIMIZE)
-    m.optimize()
-    # restemp = []
-    # for i in range(N_BRICKS):
-    #     l=[]
-    #     for j in range(NB_SR):
-    #         l.append(abs_var[i,j].x)
-    #     restemp.append(l)
-    # print(restemp)
-
-elif OBJECTIVE == "dist":
-    mult_mat = m.addVars(N_BRICKS,NB_SR,vtype=gp.GRB.CONTINUOUS)
-    m.addConstrs(mult_mat[i,j] == v[i,j]*distances[i,j] for i in range(N_BRICKS) for j in range(NB_SR))
-    dist_sum = gp.quicksum(mult_mat[i,j] for i in range(N_BRICKS) for j in range(NB_SR))
-    m.setObjective(dist_sum, gp.GRB.MINIMIZE)
-    m.optimize() 
-    # dist_mat = []
-    # for i in range(N_BRICKS):
-    #     row = []
-    #     for j in range(NB_SR):
-    #         row.append(mult_mat[i,j].x)
-    #     dist_mat.append(row)
-    
-
-    # dist_mat = np.array(dist_mat)
-    # print(dist_mat)
-
+# dist_mat = np.array(dist_mat)
+# print(dist_mat)
 
 # new_center = -1
 # if nb_additional_SR > 0:
