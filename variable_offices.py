@@ -8,19 +8,14 @@ import gurobipy as gp
 # When you have no fixed center offices
 ###############
 
-
-
 index_values = pd.read_csv("data/bricks_index_values.csv",index_col=0)
 distances = pd.read_csv("data/brick_rp_distances.csv",index_col=0)
 all_distances = pd.read_csv("data/distances.csv",delimiter=";")
 distance_matrix= np.genfromtxt('data/dis.csv', delimiter=',', skip_header=0)  # skip_header=1 if there is a header
 
 
-#### change here the type of optimization
+#### change here the type of optimization: Will be removed because 3-objectives
 OBJECTIVE = "dist" #or "disrupt" or "dist"
-
-
-nb_additional_SR = 0
 
 representation = [
     [4,5,6,7,8,15],
@@ -29,9 +24,7 @@ representation = [
     [1,2,3,19,20,21,22]
 ]
 
-
-
-nb_SR = len(representation)+nb_additional_SR
+nb_SR = len(representation)
 nb_bricks = sum(len(repres) for repres in representation)
 new_work_balance = (len(representation))/nb_SR
 
@@ -49,10 +42,7 @@ center_bricks = m.addVars(nb_bricks,vtype = gp.GRB.BINARY, name="C")
 # Create Constraints
 # Center brick constraints
 old_center = [3,13,15,21]
-center = []
-nb_unfixed_center = nb_SR-len(center)+nb_additional_SR
 
-m.addConstrs((center_bricks[c] == 1 for c in center), name="Initial_Center")
 m.addConstr(gp.quicksum(center_bricks[i] for i in range(len(center_bricks))) == nb_SR, name="nb center")
 
 # One SR per area
@@ -67,7 +57,8 @@ m.addConstrs(
     name="OCPSR" # One Center Per SR
 )
 
-# Workload constraints
+
+# TO DO: Workload constraints: to reimplement as objective
 workload_repeated = np.repeat(workload,nb_SR,axis=0).reshape(nb_bricks,nb_SR)
 resulting_workload = m.addVars(nb_bricks,nb_SR,vtype=gp.GRB.CONTINUOUS, name="RW")
 m.addConstrs(
@@ -93,6 +84,7 @@ m.addConstrs(
     name="MaxWeightedSums"
 )
 
+
 #Create Objective
 #Objective minimum disruption
 m_orig = np.zeros((nb_bricks,nb_SR),dtype=int)
@@ -101,15 +93,17 @@ for i in range(len(representation)):
     
 #Objective 1
 if OBJECTIVE == "disrupt":
+    m_orig = np.zeros((nb_bricks,nb_SR),dtype=int)
+    for i in range(nb_SR):
+        m_orig[old_center[i],i] = 1
+
     diff_var = m.addVars(nb_bricks,nb_SR,vtype=gp.GRB.INTEGER,name="Diff")
     m.addConstrs((diff_var[i,j] >= v[i,j] - m_orig[i,j] for i in range(nb_bricks) for j in range(nb_SR)),name="diff?")
     abs_var = m.addVars(nb_bricks,nb_SR,vtype=gp.GRB.INTEGER,name="abs")
-    m.addConstrs((abs_var[i,j] == gp.abs_(diff_var[i,j]) for i in range(nb_bricks) for j in range(nb_SR)),name="abs?")
-    
-    disrupt_SR_sum = gp.quicksum(abs_var[i,j] for i in range(nb_bricks) for j in range(nb_SR))
-    disrupt_center_sum = gp.quicksum(center_bricks[i] for i in old_center)
-    
-    m.setObjective(disrupt_SR_sum+disrupt_center_sum, gp.GRB.MINIMIZE)
+    m.addConstrs((abs_var[i,j] == 0.5*gp.abs_(diff_var[i,j]) for i in range(nb_bricks) for j in range(nb_SR)),name="abs?")
+    disrupt_sum = gp.quicksum(abs_var[i,j] for i in range(nb_bricks) for j in range(nb_SR))
+    m.setObjective(disrupt_sum, gp.GRB.MINIMIZE)
+
     m.write("myModel.lp")
     #Create Objective
     #Solve
@@ -122,47 +116,49 @@ if OBJECTIVE == "disrupt":
         restemp.append(l)
     print(restemp)
 
-elif OBJECTIVE == "dist":
-    #Objective 2
-    mult_mat = m.addVars(nb_bricks,nb_SR,vtype=gp.GRB.CONTINUOUS,name="M")
+
+# elif OBJECTIVE == "dist":
+    #TO DO: Objective 2:still broken because of center
+    # mult_mat = m.addVars(nb_bricks,nb_SR,vtype=gp.GRB.CONTINUOUS,name="M")
     
     
-    dist_temp = m.addMVar(shape=(nb_bricks, nb_unfixed_center), vtype=gp.GRB.CONTINUOUS, name="D")
+    # dist_temp = m.addMVar(shape=(nb_bricks, nb_unfixed_center), vtype=gp.GRB.CONTINUOUS, name="D")
     
-    m.addConstrs((dist_temp[i,k] == gp.quicksum(center_bricks[j]*distance_matrix[i,j] 
-                                                for j in range(nb_bricks) if j not in center)
-                  for i in range(nb_bricks) for k in range(nb_unfixed_center)), name="tempdist")
+    # m.addConstrs((dist_temp[i,k] == gp.quicksum(center_bricks[j]*distance_matrix[i,j] 
+    #                                             for j in range(nb_bricks) if j not in center)
+    #               for i in range(nb_bricks) for k in range(nb_unfixed_center)), name="tempdist")
     
 
     
-    m.addConstrs((mult_mat[i,j] == v[i,j]*distances[i,j] for i in range(nb_bricks) for j in range(len(center))), name="ee")
-    m.addConstrs((mult_mat[i,j] == v[i,j]*dist_temp[i] for i in range(nb_bricks) for j in range(len(center),nb_SR)),
-                 name="Part2")
-    dist_sum = gp.quicksum(mult_mat[i,j] for i in range(nb_bricks) for j in range(nb_SR))
+    # m.addConstrs((mult_mat[i,j] == v[i,j]*distances[i,j] for i in range(nb_bricks) for j in range(len(center))), name="ee")
+    # m.addConstrs((mult_mat[i,j] == v[i,j]*dist_temp[i] for i in range(nb_bricks) for j in range(len(center),nb_SR)),
+    #              name="Part2")
+    # dist_sum = gp.quicksum(mult_mat[i,j] for i in range(nb_bricks) for j in range(nb_SR))
     
-    m.setObjective(dist_sum, gp.GRB.MINIMIZE)
-    m.write("myModel.lp")
-    #Create Objective
-    #Solve
-    m.optimize() 
+    # m.setObjective(dist_sum, gp.GRB.MINIMIZE)
+    # m.write("myModel.lp")
+    # #Create Objective
+    # #Solve
+    # m.optimize() 
 
-    dist_mat = []
-    for i in range(nb_bricks):
-        row = []
-        for j in range(nb_SR):
-            row.append(mult_mat[i,j].x)
-        dist_mat.append(row)
+    # dist_mat = []
+    # for i in range(nb_bricks):
+    #     row = []
+    #     for j in range(nb_SR):
+    #         row.append(mult_mat[i,j].x)
+    #     dist_mat.append(row)
     
 
-    dist_mat = np.array(dist_mat)
-    print(dist_mat)
-    
-new_center = -1
-if nb_additional_SR > 0:
-    for i in range(nb_bricks):
-        if center_bricks[i].x > 0 and i not in center:
-            new_center = i
-    print(f"nouveau SR en {i}")
+    # dist_mat = np.array(dist_mat)
+    # print(dist_mat)
+
+
+# new_center = -1
+# if nb_additional_SR > 0:
+#     for i in range(nb_bricks):
+#         if center_bricks[i].x > 0:
+#             new_center = i
+#     print(f"nouveau SR en {i}")
 print("La solution est :")
 res = []
 for j in range(nb_SR):
@@ -176,9 +172,8 @@ for i in range(nb_bricks):
     if center_bricks[i].x == 1:
         res2.append(i+1)
 
-
 print(res)
-print(f"new_center : {res2} // old : [3,13,15,21]")
+# print(f"new_center : {res2} // old : [3,13,15,21]")
 
 #print workload matrix
 workload_res = []

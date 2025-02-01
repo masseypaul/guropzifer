@@ -16,6 +16,8 @@ representation = [
     [1,2,3,19,20,21,22]
 ]
 
+center=[3,13,15,21]
+
 representation_minus_one = [[x-1 for x in row] for row in representation]
 print(representation_minus_one)
 N_BRICKS = index_values.shape[0]
@@ -30,8 +32,6 @@ v = m.addMVar(shape=(N_BRICKS,N_RPS),vtype=gp.GRB.BINARY,name="V")
 
 #Create Constraints
 # Center brick constraints
-center=[3,13,15,21]
-
 for i,k in enumerate(center):
     m.addConstr(v[k,i] == 1)
 
@@ -70,17 +70,16 @@ m.addConstrs(
 #Objective minimum disruption
 m_orig = np.zeros((N_BRICKS,N_RPS),dtype=int)
 for i in range(N_RPS):
-    m_orig[representation_minus_one[i],i] = 1
+    m_orig[center[i],i] = 1
     
 
 diff_var = m.addVars(N_BRICKS,N_RPS,vtype=gp.GRB.INTEGER,name="Diff")
 m.addConstrs((diff_var[i,j] >= v[i,j] - m_orig[i,j] for i in range(N_BRICKS) for j in range(N_RPS)),name="diff?")
 abs_var = m.addVars(N_BRICKS,N_RPS,vtype=gp.GRB.INTEGER,name="abs")
-m.addConstrs((abs_var[i,j] == gp.abs_(diff_var[i,j]) for i in range(N_BRICKS) for j in range(N_RPS)),name="abs?")
+m.addConstrs((abs_var[i,j] == 0.5*gp.abs_(diff_var[i,j]) for i in range(N_BRICKS) for j in range(N_RPS)),name="abs?")
 disrupt_sum = gp.quicksum(abs_var[i,j] for i in range(N_BRICKS) for j in range(N_RPS))
 m.setObjective(disrupt_sum, gp.GRB.MINIMIZE)
 m.optimize()
-
 
 
 mult_mat = m.addVars(N_BRICKS,N_RPS,vtype=gp.GRB.CONTINUOUS)
