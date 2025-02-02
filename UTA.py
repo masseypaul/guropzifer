@@ -113,3 +113,6 @@ print("Ranked solution:")
 for i in ranked_solution:
     print(f"{labels[i]}: {all_values[i]}")
 
+data["value"] = reference_values
+
+data.to_csv('./data/resultUTA.csv', index=False)
