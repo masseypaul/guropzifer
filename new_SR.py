@@ -35,6 +35,7 @@ representation = [
 nb_center = len(representation)+nb_additional_SR
 nb_bricks = sum(len(repres) for repres in representation)
 # print(nb_center,nb_bricks)
+new_work_balance = (len(representation))/nb_center
 
 representation_minus_one = [[x-1 for x in row] for row in representation]
 
@@ -78,8 +79,9 @@ m.addConstrs(
     name="workload"
 )
 
-minWL = 0.8*0.8
-maxWL = 1.2*0.8
+print(new_work_balance)
+minWL = 0.8*new_work_balance
+maxWL = 1.2**new_work_balance
 print(minWL,maxWL)
 weighted_sums = m.addVars(nb_center, lb=0, vtype=gp.GRB.CONTINUOUS,name="WS")
 m.addConstrs(
