@@ -95,15 +95,15 @@ if OBJECTIVE == "disrupt":
     #Create Objective
     #Solve
     m.optimize()
-    m.write("myModel.lp")
-    print(f"\n\n\n\n\n{m.ObjVal}\n\n\n\n")
-    restemp = []
-    for i in range(22):
-        l=[]
-        for j in range(4):
-            l.append(abs_var[i,j].x)
-        restemp.append(l)
-    print(restemp)
+    # m.write("myModel.lp")
+    # print(f"\n\n\n\n\n{m.ObjVal}\n\n\n\n")
+    # restemp = []
+    # for i in range(22):
+    #     l=[]
+    #     for j in range(4):
+    #         l.append(abs_var[i,j].x)
+    #     restemp.append(l)
+    # print(restemp)
 
 elif OBJECTIVE == "dist":
     #Objective 2
@@ -116,15 +116,15 @@ elif OBJECTIVE == "dist":
     #Solve
     m.optimize()
 
-    dist_mat = []
-    for i in range(22):
-        row = []
-        for j in range(4):
-            row.append(mult_mat[i,j].x)
-        dist_mat.append(row)
+    # dist_mat = []
+    # for i in range(22):
+    #     row = []
+    #     for j in range(4):
+    #         row.append(mult_mat[i,j].x)
+    #     dist_mat.append(row)
 
-    dist_mat = np.array(dist_mat)
-    print(dist_mat)
+    # dist_mat = np.array(dist_mat)
+    # print(dist_mat)
 
 print("La solution est :")
 res = []
@@ -170,7 +170,11 @@ distance_matrix= np.genfromtxt('data/dis.csv', delimiter=',', skip_header=0)  # 
 keys = [4, 14, 16, 22]
 
 # Create a dictionary by zipping keys with the sublists
-center_to_associates = dict(zip(keys, res))
+center_to_associates = {}
+for cluster in res:
+    for key in keys:
+        if key in cluster:
+            center_to_associates[key] = cluster
 
 center_to_assigned = {key - 1: [value - 1 for value in values] for key, values in center_to_associates.items()}
 
