@@ -207,5 +207,3 @@ plt.xlabel("X Coordinate")
 plt.ylabel("Y Coordinate")
 plt.grid()
 plt.show()
-
-

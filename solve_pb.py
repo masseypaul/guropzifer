@@ -95,15 +95,15 @@ if OBJECTIVE == "disrupt":
     #Create Objective
     #Solve
     m.optimize()
-    m.write("myModel.lp")
-    print(f"\n\n\n\n\n{m.ObjVal}\n\n\n\n")
-    restemp = []
-    for i in range(22):
-        l=[]
-        for j in range(4):
-            l.append(abs_var[i,j].x)
-        restemp.append(l)
-    print(restemp)
+    # m.write("myModel.lp")
+    # print(f"\n\n\n\n\n{m.ObjVal}\n\n\n\n")
+    # restemp = []
+    # for i in range(22):
+    #     l=[]
+    #     for j in range(4):
+    #         l.append(abs_var[i,j].x)
+    #     restemp.append(l)
+    # print(restemp)
 
 elif OBJECTIVE == "dist":
     #Objective 2
@@ -116,15 +116,15 @@ elif OBJECTIVE == "dist":
     #Solve
     m.optimize()
 
-    dist_mat = []
-    for i in range(22):
-        row = []
-        for j in range(4):
-            row.append(mult_mat[i,j].x)
-        dist_mat.append(row)
+    # dist_mat = []
+    # for i in range(22):
+    #     row = []
+    #     for j in range(4):
+    #         row.append(mult_mat[i,j].x)
+    #     dist_mat.append(row)
 
-    dist_mat = np.array(dist_mat)
-    print(dist_mat)
+    # dist_mat = np.array(dist_mat)
+    # print(dist_mat)
 
 print("La solution est :")
 res = []
