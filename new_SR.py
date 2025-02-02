@@ -23,7 +23,7 @@ OBJECTIVE = "disrupt" #or "disrupt" or "dist"
 # print(all_distances.head())
 # print(pfitzer_100.head())
 
-nb_additional_SR = 1
+nb_additional_SR = 2
 
 representation = [
     [4,5,6,7,8,15],
@@ -62,6 +62,12 @@ m.addConstr(gp.quicksum(center_bricks[i] for i in range(len(center_bricks))) == 
 m.addConstrs(
     (sum(v[i, j] for j in range(nb_center)) == 1 for i in range(nb_bricks)), 
     name="RowSum"
+)
+
+# Center can only belong to one SR
+m.addConstrs(
+    (gp.quicksum(center_bricks[i]*v[i,j] for i in range(nb_bricks)) == 1 for j in range(nb_center)),
+    name="OCPSR" # One Center Per SR
 )
 
 # Workload constraints
@@ -123,7 +129,7 @@ elif OBJECTIVE == "dist":
     
     dist_temp = m.addMVar(shape=(nb_bricks, nb_additional_SR), vtype=gp.GRB.CONTINUOUS, name="D")
     
-    m.addConstrs((dist_temp[i,k] == gp.quicksum(center_bricks[j]*distance_matrix[i,j] 
+    m.addConstrs((dist_temp[i,k] == gp.quicksum(center_bricks[j]*v[j,k]*distance_matrix[i,j] 
                                                 for j in range(nb_bricks) if j not in center)
                   for i in range(nb_bricks) for k in range(nb_additional_SR)), name="tempdist")
     
@@ -155,6 +161,8 @@ new_center = -1
 for i in range(nb_bricks):
     if center_bricks[i].x > 0 and i not in center:
         new_center = i
+    if center_bricks[i].x > 0:
+        print(i+1)
 print(f"nouveau SR en {i}")
 print("La solution est :")
 res = []
