@@ -23,7 +23,7 @@ OBJECTIVE = "disrupt" #or "disrupt" or "dist"
 # print(all_distances.head())
 # print(pfitzer_100.head())
 
-nb_additional_SR = 1
+nb_additional_SR = 2
 
 representation = [
     [4,5,6,7,8,15],
@@ -129,7 +129,7 @@ elif OBJECTIVE == "dist":
     
     dist_temp = m.addMVar(shape=(nb_bricks, nb_additional_SR), vtype=gp.GRB.CONTINUOUS, name="D")
     
-    m.addConstrs((dist_temp[i,k] == gp.quicksum(center_bricks[j]*distance_matrix[i,j] 
+    m.addConstrs((dist_temp[i,k] == gp.quicksum(center_bricks[j]*v[j,k]*distance_matrix[i,j] 
                                                 for j in range(nb_bricks) if j not in center)
                   for i in range(nb_bricks) for k in range(nb_additional_SR)), name="tempdist")
     
