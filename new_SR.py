@@ -64,6 +64,12 @@ m.addConstrs(
     name="RowSum"
 )
 
+# Center can only belong to one SR
+m.addConstrs(
+    (gp.quicksum(center_bricks[i]*v[i,j] for i in range(nb_bricks)) == 1 for j in range(nb_center)),
+    name="OCPSR" # One Center Per SR
+)
+
 # Workload constraints
 workload_repeated = np.repeat(workload,nb_center,axis=0).reshape(nb_bricks,nb_center)
 resulting_workload = m.addVars(nb_bricks,nb_center,vtype=gp.GRB.CONTINUOUS, name="RW")
@@ -155,6 +161,8 @@ new_center = -1
 for i in range(nb_bricks):
     if center_bricks[i].x > 0 and i not in center:
         new_center = i
+    if center_bricks[i].x > 0:
+        print(i+1)
 print(f"nouveau SR en {i}")
 print("La solution est :")
 res = []
