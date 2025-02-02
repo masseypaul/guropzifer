@@ -26,7 +26,7 @@ distances = np.array(distances)
 workload = index_values
 
 # Parameters
-eps = 0.1  # Epsilon value for the epsilon-constraint algorithm
+eps = 0.1
 minWL = 0.95
 maxWL = 1.05
 
@@ -160,7 +160,7 @@ for i in range(len(ND)):
 print("Non-dominated solutions:")
 solutions = []
 for sol in ND_filtered:
-    # print(f"x_nd = {sol[0]}, f1 = {sol[1]}, f2 = {sol[2]}")
+    print(f"f1 = {sol[1]}, f2 = {sol[2]}")
     solutions.append(np.array(sol[0]).reshape(22, 4))
 
 solution = solutions[1]
@@ -205,7 +205,11 @@ from sklearn.manifold import MDS
 keys = [x+1 for x in center]
 
 # Create a dictionary by zipping keys with the sublists
-center_to_associates = dict(zip(keys, res))
+center_to_associates = {}
+for cluster in res:
+    for key in keys:
+        if key in cluster:
+            center_to_associates[key] = cluster
 
 center_to_assigned = {key - 1: [value - 1 for value in values] for key, values in center_to_associates.items()}
 

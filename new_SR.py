@@ -207,7 +207,11 @@ keys = [4, 14, 16, 22]
 keys.append(new_center+1)
 
 # Create a dictionary by zipping keys with the sublists
-center_to_associates = dict(zip(keys, res))
+center_to_associates = {}
+for cluster in res:
+    for key in keys:
+        if key in cluster:
+            center_to_associates[key] = cluster
 
 center_to_assigned = {key - 1: [value - 1 for value in values] for key, values in center_to_associates.items()}
 
