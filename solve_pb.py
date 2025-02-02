@@ -84,7 +84,6 @@ for i in range(4):
     
 #Objective 1
 if OBJECTIVE == "disrupt":
-    print('on sait que ca marche pas mais on a pas encore trouvé pourquoi...')
     diff_var = m.addVars(22,4,vtype=gp.GRB.INTEGER,name="Diff")
     m.addConstrs((diff_var[i,j] >= v[i,j] - m_orig[i,j] for i in range(22) for j in range(4)),name="diff?")
     abs_var = m.addVars(22,4,vtype=gp.GRB.INTEGER,name="abs")
